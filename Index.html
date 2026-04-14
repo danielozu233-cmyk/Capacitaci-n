@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -113,31 +113,150 @@
     .btn-blue{background:linear-gradient(180deg,color-mix(in srgb, var(--blue) 24%, var(--card-soft)),color-mix(in srgb, var(--blue) 14%, var(--card-soft)));color:var(--text);border:1px solid color-mix(in srgb, var(--blue) 24%, transparent)}
     .btn-sm{padding:9px 12px;border-radius:12px;font-size:13px}
     .btn-theme{min-width:152px}
+    .btn{border-radius:18px}
+    .btn-primary{box-shadow:0 14px 26px color-mix(in srgb, var(--accent) 20%, transparent)}
+    .btn-secondary{box-shadow:0 10px 20px rgba(15,23,42,.06)}
 
     .message{margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);display:none}
     .message.show{display:block}
     .message.error{background:color-mix(in srgb, var(--red) 10%, transparent);color:color-mix(in srgb, var(--red) 88%, #fff)}
     .message.success{background:color-mix(in srgb, var(--green) 10%, transparent);color:color-mix(in srgb, var(--green) 92%, #fff)}
 
+    .toast-stack{
+      position:fixed;
+      right:22px;
+      bottom:22px;
+      z-index:10050;
+      display:grid;
+      gap:10px;
+      pointer-events:none;
+    }
+    .toast{
+      min-width:300px;
+      max-width:420px;
+      padding:14px 16px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg,var(--panel),var(--panel-2));
+      color:var(--text);
+      box-shadow:0 18px 34px rgba(15,23,42,.16);
+      backdrop-filter:blur(10px);
+      transform:translateY(10px);
+      opacity:0;
+      animation:toastIn .24s ease forwards;
+    }
+    .toast.success{
+      border-color:color-mix(in srgb, var(--green) 22%, var(--line));
+      box-shadow:0 18px 34px color-mix(in srgb, var(--green) 14%, rgba(15,23,42,.12));
+    }
+    .toast.info{
+      border-color:color-mix(in srgb, var(--blue) 22%, var(--line));
+      box-shadow:0 18px 34px color-mix(in srgb, var(--blue) 12%, rgba(15,23,42,.12));
+    }
+    .toast.error{
+      border-color:color-mix(in srgb, var(--red) 22%, var(--line));
+      box-shadow:0 18px 34px color-mix(in srgb, var(--red) 12%, rgba(15,23,42,.12));
+    }
+    .toast-title{
+      font-size:14px;
+      font-weight:900;
+      margin-bottom:4px;
+      letter-spacing:-.01em;
+    }
+    .toast-text{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    @keyframes toastIn{
+      from{opacity:0;transform:translateY(10px) scale(.98)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    @keyframes toastOut{
+      from{opacity:1;transform:translateY(0) scale(1)}
+      to{opacity:0;transform:translateY(8px) scale(.985)}
+    }
+
     .topbar{
       display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
-      margin-bottom:20px;padding:20px 22px;border:1px solid var(--line);border-radius:30px;
+      margin-bottom:24px;padding:22px 24px;border:1px solid var(--line);border-radius:34px;
       background:
         linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, transparent), color-mix(in srgb, var(--blue) 7%, transparent)),
         linear-gradient(180deg,var(--panel),var(--panel-2));
-      box-shadow:var(--shadow);position:relative;overflow:hidden;
+      box-shadow:0 28px 60px rgba(15,23,42,.12);position:relative;overflow:hidden;
+      backdrop-filter:blur(12px);
     }
     .topbar::after{
       content:"";position:absolute;right:-70px;top:-70px;width:180px;height:180px;border-radius:50%;
       background:radial-gradient(circle, color-mix(in srgb, var(--blue) 14%, transparent), transparent 68%);pointer-events:none;
     }
-    .topbar h2{margin:0;font-size:30px;letter-spacing:-.03em}
-    .topbar p{margin:6px 0 0;color:var(--muted)}
-    .user-badge{display:inline-flex;align-items:center;gap:8px;padding:11px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--line);font-weight:800}
+    .topbar h2{margin:0;font-size:32px;letter-spacing:-.04em}
+    .topbar p{margin:6px 0 0;color:var(--muted);font-size:14px}
+    .user-badge{display:inline-flex;align-items:center;gap:8px;padding:11px 15px;border-radius:999px;background:linear-gradient(180deg,var(--card),var(--card-soft));border:1px solid var(--line);font-weight:800;box-shadow:var(--shadow-soft)}
     .topbar-right{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .agent-picker-shell{
+      display:grid;
+      grid-template-columns:minmax(580px,860px);
+      justify-content:center;
+      gap:16px;
+      align-items:end;
+      padding:18px;
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:linear-gradient(180deg,var(--card),var(--panel-2));
+      box-shadow:0 20px 38px rgba(15,23,42,.09);
+    }
+    .agent-picker-main{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 190px;
+      gap:14px;
+      align-items:end;
+    }
+    .agent-select-wrap{
+      position:relative;
+    }
+    .agent-select-wrap::before{
+      content:"👤";
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:15px;
+      pointer-events:none;
+      opacity:.8;
+    }
+    .agent-select-wrap::after{
+      content:"▾";
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:14px;
+      color:var(--muted);
+      pointer-events:none;
+    }
+    .agent-select{
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      padding-left:42px !important;
+      padding-right:42px !important;
+      min-height:58px;
+      font-weight:700;
+      border-radius:20px !important;
+      background:linear-gradient(180deg,var(--panel),var(--card-soft)) !important;
+      box-shadow:0 14px 28px rgba(15,23,42,.08);
+    }
+    .btn-load-route{
+      min-height:58px;
+      padding-inline:22px;
+      width:100%;
+      border-radius:20px;
+      justify-content:center;
+    }
 
     .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
-    .stat{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow-soft);position:relative;overflow:hidden}
+    .stat{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:28px;padding:20px;box-shadow:0 18px 34px rgba(15,23,42,.08);position:relative;overflow:hidden}
     .stat::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 34%, transparent), transparent)}
     .stat .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:800}
     .stat .value{font-size:32px;font-weight:900;letter-spacing:-.03em}
@@ -145,18 +264,20 @@
     .bar-shell{height:12px;background:var(--bg-2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:10px}
     .bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .25s ease}
 
-    .section{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:30px;padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+    .section{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:32px;padding:24px;box-shadow:0 22px 42px rgba(15,23,42,.10);margin-bottom:22px;backdrop-filter:blur(10px)}
     .section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
     .section-head h3{margin:0;font-size:22px;letter-spacing:-.02em}
     .section-head p{margin:4px 0 0;color:var(--muted);line-height:1.45}
 
-    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:22px;background:var(--card)}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--card),var(--panel-2));box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
     table{width:100%;min-width:950px;border-collapse:collapse}
     th,td{padding:15px 13px;border-bottom:1px solid var(--line-soft);text-align:left;font-size:14px;vertical-align:top}
     th{background:color-mix(in srgb, var(--card-soft) 82%, transparent);color:var(--text);position:sticky;top:0;z-index:1;font-weight:800}
     tbody tr{transition:.16s ease}
     tbody tr:hover{background:color-mix(in srgb, var(--blue) 5%, transparent)}
     .clickable-row{cursor:pointer}
+    .locked-row{opacity:.58;cursor:not-allowed}
+    .locked-row:hover{background:transparent !important}
     .activity-link{font-weight:800;color:var(--text)}
     .subline{display:block;font-size:12px;color:var(--muted);margin-top:4px}
 
@@ -170,19 +291,18 @@
     .badge.approved{background:color-mix(in srgb, var(--green) 14%, transparent);color:color-mix(in srgb, var(--green) 92%, #fff)}
     .badge.changes{background:color-mix(in srgb, var(--red) 12%, transparent);color:color-mix(in srgb, var(--red) 86%, #fff)}
     .badge.completed{background:color-mix(in srgb, var(--green) 14%, transparent);color:color-mix(in srgb, var(--green) 92%, #fff)}
+    .badge.locked{background:color-mix(in srgb, var(--muted) 12%, transparent);color:var(--muted)}
     .badge.role-admin{background:color-mix(in srgb, var(--purple) 12%, transparent);color:color-mix(in srgb, var(--purple) 92%, #fff)}
     .badge.role-agente{background:color-mix(in srgb, var(--blue) 12%, transparent);color:color-mix(in srgb, var(--blue) 88%, #fff)}
 
-    .detail-card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:26px;padding:18px}
+    .detail-card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:28px;padding:20px;box-shadow:0 20px 40px rgba(15,23,42,.10)}
     .detail-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
     .detail-header h4{margin:8px 0 8px;font-size:28px;letter-spacing:-.03em}
     .detail-header p{margin:0;color:var(--muted);line-height:1.5}
     .score-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;background:var(--card-soft);border:1px solid var(--line);font-weight:800}
 
-    .status-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-    .status-actions .btn.active{outline:2px solid color-mix(in srgb, var(--accent) 38%, transparent)}
-
-    .subcard{background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:16px;margin-top:14px}
+    
+    .subcard{background:linear-gradient(180deg,color-mix(in srgb, var(--panel) 88%, transparent),color-mix(in srgb, var(--card-soft) 94%, transparent));border:1px solid var(--line);border-radius:24px;padding:18px;margin-top:14px;box-shadow:0 12px 24px rgba(15,23,42,.06)}
     .subcard h5{margin:0 0 12px;font-size:16px;letter-spacing:-.01em}
     .grid-2,.grid-3{display:grid;gap:14px}
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -198,7 +318,7 @@
 
     .modal-backdrop{position:fixed;inset:0;background:rgba(4,9,17,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:24px;z-index:9999}
     .modal-backdrop.show{display:flex}
-    .modal-card{width:min(1180px,100%);max-height:92vh;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:32px;box-shadow:var(--shadow);padding:20px;position:relative;display:flex;flex-direction:column}
+    .modal-card{width:min(1180px,100%);max-height:92vh;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:34px;box-shadow:0 34px 70px rgba(15,23,42,.20);padding:20px;position:relative;display:flex;flex-direction:column}
     .modal-card.modal-wide{width:min(1240px,100%)}
     .modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;position:relative;flex:0 0 auto;background:linear-gradient(180deg,var(--panel),color-mix(in srgb, var(--panel) 96%, transparent));padding-bottom:14px;z-index:3;border-bottom:1px solid var(--line-soft);margin-bottom:6px}
     .modal-head h3{margin:0;font-size:26px;letter-spacing:-.03em}
@@ -222,12 +342,16 @@
     .statement-options{display:flex;gap:10px;flex-wrap:wrap}
     .statement-options label{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--glass)}
 
-    .selector-row{display:grid;grid-template-columns:1.3fr auto auto;gap:12px;align-items:end}
+    .selector-row{display:grid;grid-template-columns:1fr;gap:12px;align-items:end}
 
     @media (max-width:1150px){
       .stats,.grid-3,.admin-grid,.selector-row{grid-template-columns:1fr}
       .grid-2{grid-template-columns:1fr}
       .modal-card{padding:16px}
+      .agent-picker-shell{grid-template-columns:1fr}
+      .agent-picker-main{grid-template-columns:1fr}
+      .btn-load-route{min-width:0}
+      .adminagentselect{width:40px}
     }
   </style>
 </head>
@@ -236,9 +360,11 @@
     <div class="login-card">
       <div class="login-top">
         <div>
-          <h1>Capacitación — Inscripción es Cuestión de Ventas</h1>
+          <h1>Capacitación</h1>
+          <h1>------------------</h1>
+           <h1>Inscripción es Cuestión de Ventas</h1>
+          <p>Ingresa con tu correo institucional para acceder al contenido.</p>
         </div>
-        <button class="btn btn-secondary btn-theme" id="themeToggleLogin">☀️ Modo claro</button>
       </div>
       <div class="field">
         <label>Correo institucional</label>
@@ -260,7 +386,6 @@
       <div class="topbar-right">
         <button class="btn btn-secondary btn-theme" id="themeToggleApp">☀️ Modo claro</button>
         <span class="user-badge" id="userBadge">Usuario</span>
-        <button class="btn btn-secondary" id="refreshBtn">Actualizar</button>
         <button class="btn btn-secondary" id="logoutBtn">Cerrar sesión</button>
       </div>
     </header>
@@ -347,13 +472,16 @@
           </div>
           <button class="btn btn-secondary" id="openAccessModalBtn">Administración de accesos</button>
         </div>
-        <div class="selector-row">
-          <div class="field">
-            <label>Agente</label>
-            <select id="adminAgentSelect"></select>
+        <div class="agent-picker-shell">
+          <div class="agent-picker-main">
+            <div class="field">
+              <label>Agente</label>
+              <div class="agent-select-wrap">
+                <select id="adminAgentSelect" class="agent-select"></select>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-load-route" id="loadSelectedAgentBtn">Cargar ruta</button>
           </div>
-          <button class="btn btn-primary" id="loadSelectedAgentBtn">Cargar ruta</button>
-          <button class="btn btn-secondary" id="quickOpenSelectedBtn">Abrir primer módulo</button>
         </div>
       </section>
 
@@ -434,6 +562,8 @@
     </div>
   </div>
 
+  <div id="toastStack" class="toast-stack"></div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -450,7 +580,6 @@
 
     const BOOTSTRAP_USERS = {
       'pjcaballero@iluni.us': { email: 'pjcaballero@iluni.us', nombre: 'Jacqueline Caballero', role: 'agente', agentId: 'jacqueline_caballero' },
-      'stnozuna@upana.edu.gt': { email: 'stnozuna@upana.edu.gt', nombre: 'Néstor Ozuna', role: 'agente', agentId: 'nestor_ozuna' },
       'nozuna@upana.edu.gt': { email: 'nozuna@upana.edu.gt', nombre: 'Daniel Galvez', role: 'admin' },
       'jmjuarez@upana.edu.gt': { email: 'jmjuarez@upana.edu.gt', nombre: 'Joselyn Juárez', role: 'admin' },
       'mherreraq@upana.edu.gt': { email: 'mherreraq@upana.edu.gt', nombre: 'Mynor Herrera', role: 'admin' }
@@ -586,13 +715,29 @@
       return iso ? new Date(iso).toLocaleString('es-GT') : 'Sin registro';
     }
 
+    function showToast(title, text = '', variant = 'success'){
+      const stack = document.getElementById('toastStack');
+      if (!stack) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${variant}`;
+      toast.innerHTML = `
+        <div class="toast-title">${safe(title)}</div>
+        <div class="toast-text">${safe(text)}</div>
+      `;
+      stack.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'toastOut .22s ease forwards';
+        setTimeout(() => toast.remove(), 220);
+      }, 3400);
+    }
+
     function titleCaseWord(value){
       if (!value) return 'Sin respuesta';
       return String(value).charAt(0).toUpperCase() + String(value).slice(1);
     }
 
     function getTheme(){
-      return localStorage.getItem(THEME_KEY) || 'dark';
+      return localStorage.getItem(THEME_KEY) || 'light';
     }
 
     function applyTheme(theme){
@@ -669,16 +814,79 @@
     }
 
     function moduleState(agentId, moduleId){
-      return getAgent(agentId).modules[moduleId];
+      const agent = getAgent(agentId);
+      if (!agent) return blankModule();
+      if (!agent.modules[moduleId]) agent.modules[moduleId] = blankModule();
+      return agent.modules[moduleId];
     }
 
     function visibleStatus(state){
-      if (state.reviewStatus === 'approved') return { text:'Aprobado', cls:'approved' };
-      if (state.reviewStatus === 'changes') return { text:'Con ajustes', cls:'changes' };
-      if (state.submitted) return { text:'En revisión', cls:'submitted' };
-      if (state.status === 'completado') return { text:'Completado', cls:'completed' };
-      if (state.status === 'proceso') return { text:'En proceso', cls:'progress' };
+      if (state.reviewStatus === 'approved' || state.status === 'completado') return { text:'Completado', cls:'completed' };
+      if (state.reviewStatus === 'changes') return { text:'Pendiente', cls:'pending' };
+      if (state.submitted || state.reviewStatus === 'submitted') return { text:'En revisión', cls:'submitted' };
       return { text:'Pendiente', cls:'pending' };
+    }
+
+    function hasModuleBeenSubmitted(state){
+      return !!state?.submittedAt || ['submitted','approved','changes'].includes(state?.reviewStatus);
+    }
+
+    function isModuleUnlocked(agentId, moduleId){
+      const index = curriculum.findIndex(m => m.id === moduleId);
+      if (index <= 0) return true;
+      const previousModule = curriculum[index - 1];
+      const previousState = moduleState(agentId, previousModule.id);
+      return hasModuleBeenSubmitted(previousState);
+    }
+
+    function getMissingFieldsForModule(agentId, moduleId){
+      const module = moduleById(moduleId);
+      const state = moduleState(agentId, moduleId);
+      if (!module) return [];
+
+      if (module.tipo === 'grabacion') {
+        const missing = [];
+        if (!String(state.fields.summary || '').trim()) missing.push('resumen del aprendizaje');
+        if (!String(state.fields.keyPoints || '').trim()) missing.push('3 puntos clave');
+        return missing;
+      }
+
+      if (module.id === 'a1') {
+        return activity1Statements
+          .filter(item => !String(state.fields[item.id] || '').trim())
+          .map((_, idx) => `respuesta ${idx + 1}`);
+      }
+
+      if (module.id === 'a2') {
+        const required = [
+          ['scenario','contexto del caso'],
+          ['objection1','objeción 1'],
+          ['answer1','respuesta del asesor 1'],
+          ['objection2','objeción 2'],
+          ['answer2','respuesta del asesor 2'],
+          ['closingScript','cierre propuesto']
+        ];
+        return required.filter(([key]) => !String(state.fields[key] || '').trim()).map(([,label]) => label);
+      }
+
+      if (module.id === 'ev1') {
+        return quiz
+          .filter(item => String(state.fields['q' + item.n] ?? '').trim() === '')
+          .map(item => `pregunta ${item.n}`);
+      }
+
+      return [];
+    }
+
+    function validateModuleBeforeSubmit(agentId, moduleId){
+      if (!isModuleUnlocked(agentId, moduleId)) {
+        return { ok:false, message:'Primero debes enviar a revisión el módulo anterior para desbloquear este.' };
+      }
+      const missing = getMissingFieldsForModule(agentId, moduleId);
+      if (missing.length) {
+        return { ok:false, message:`Completa estos apartados antes de enviar: ${missing.join(', ')}.` };
+      }
+      return { ok:true, message:'' };
     }
 
     async function initFirebase(){
@@ -846,6 +1054,7 @@
         document.getElementById('newUserRole').value = 'agente';
         message.className = 'message show success';
         message.textContent = 'Usuario guardado correctamente.';
+        showToast('Usuario guardado', `${nombre} fue registrado correctamente.`, 'success');
         render();
       } catch (error) {
         console.error(error);
@@ -1009,19 +1218,13 @@
             <div class="score-pill">Puntaje actual: ${state.score || 0} / ${moduleMaxPoints(module.id)}</div>
           </div>
 
-          <div class="status-actions">
-            <button class="btn btn-secondary ${state.status === 'pendiente' ? 'active' : ''}" data-set-status data-agent="${agentId}" data-module="${module.id}" data-status="pendiente">Pendiente</button>
-            <button class="btn btn-secondary ${state.status === 'proceso' ? 'active' : ''}" data-set-status data-agent="${agentId}" data-module="${module.id}" data-status="proceso">En proceso</button>
-            <button class="btn btn-secondary ${state.status === 'completado' ? 'active' : ''}" data-set-status data-agent="${agentId}" data-module="${module.id}" data-status="completado">Marcar como completado</button>
-          </div>
-
           ${buildLearningContentForAgent(agentId, module)}
 
           <div class="subcard">
-            <h5>Retroalimentación del administrador</h5>
+            <h5>Retroalimentación del Revisor</h5>
             <div class="field">
               <label>Feedback</label>
-              <textarea disabled>${safe(state.feedback || 'Aún no hay comentarios del administrador.')}</textarea>
+              <textarea disabled>${safe(state.feedback || 'Aún no hay comentarios del Revisor.')}</textarea>
             </div>
             <div class="hint">Revisado: ${formatDateTime(state.reviewedAt)}</div>
           </div>
@@ -1119,8 +1322,8 @@
             <h5>Calificación y puntaje</h5>
             <div class="grid-2">
               <div class="field">
-                <label>Puntaje del módulo</label>
-                <input value="${state.score || 0} / ${maxPoints}" disabled />
+                <label>Puntaje del módulo (máximo ${maxPoints})</label>
+                <input id="reviewScore" type="number" min="0" max="${maxPoints}" step="1" value="${state.score || 0}" placeholder="0 a ${maxPoints}" />
               </div>
               <div class="field">
                 <label>Estado de revisión</label>
@@ -1131,9 +1334,9 @@
                 </select>
               </div>
             </div>
-            <div class="hint">${module.tipo === 'grabacion' ? 'Al aprobar esta grabación se asignan 5 puntos.' : module.tipo === 'actividad' ? 'Al aprobar esta actividad se asignan 20 puntos.' : `Resultado automático del quiz: ${quizHits}/${quiz.length} respuestas correctas · ${evaluationPoints}/${maxPoints} puntos.`}</div>
+            <div class="hint">Puedes asignar manualmente el puntaje del módulo según la calidad de la respuesta entregada.</div>
             <div class="field" style="margin-top:12px">
-              <label>Feedback del administrador</label>
+              <label>Feedback del Revisor</label>
               <textarea id="reviewFeedback" placeholder="Escribe observaciones, recomendaciones o mejoras">${safe(state.feedback)}</textarea>
             </div>
             <div class="actions" style="margin-top:14px">
@@ -1189,6 +1392,10 @@
     }
 
     function openAgentModuleModal(agentId, moduleId){
+      if (!isModuleUnlocked(agentId, moduleId)) {
+        alert('Este módulo está bloqueado. Primero debes enviar a revisión el módulo anterior.');
+        return;
+      }
       const module = moduleById(moduleId) || curriculum[0];
       openModal(module.actividad, buildAgentModalHtml(agentId, moduleId), { type:'agent', agentId, moduleId });
     }
@@ -1222,36 +1429,59 @@
     }
 
     function submitForReview(agentId, moduleId){
+      const validation = validateModuleBeforeSubmit(agentId, moduleId);
+      if (!validation.ok) {
+        alert(validation.message);
+        return;
+      }
       const state = moduleState(agentId, moduleId);
+      const module = moduleById(moduleId);
       state.submitted = true;
       state.submittedAt = new Date().toISOString();
       state.reviewStatus = 'submitted';
-      if (state.status === 'pendiente') state.status = 'proceso';
+      state.status = 'pendiente';
       state.updatedAt = new Date().toISOString();
       saveAgentProgress(agentId);
+      closeModal();
+      showToast('Enviado para revisión', `${module?.actividad || 'El módulo'} fue enviado correctamente.`, 'success');
       render();
     }
 
-    function applyReview(agentId, moduleId, feedback, status){
+    function applyReview(agentId, moduleId, score, feedback, status){
       const state = moduleState(agentId, moduleId);
+      const maxPoints = moduleMaxPoints(moduleId);
       const module = moduleById(moduleId);
+      let parsedScore = Number(score);
+      if (Number.isNaN(parsedScore)) parsedScore = 0;
+      parsedScore = Math.max(0, Math.min(maxPoints, parsedScore));
+
       state.feedback = feedback || '';
       state.reviewStatus = status;
-      state.submitted = status === 'submitted';
       state.reviewedAt = new Date().toISOString();
       state.updatedAt = new Date().toISOString();
 
       if (status === 'approved') {
+        state.submitted = false;
         state.status = 'completado';
-        state.score = module?.tipo === 'evaluacion' ? getEvaluationWeightedPoints(moduleId, state) : moduleMaxPoints(moduleId);
-      } else if (status === 'changes' || status === 'submitted') {
-        state.status = 'proceso';
+        state.score = parsedScore;
+      } else if (status === 'changes') {
+        state.submitted = false;
+        state.status = 'pendiente';
         state.score = 0;
       } else {
+        state.submitted = true;
+        state.status = 'pendiente';
         state.score = 0;
       }
 
       saveAgentProgress(agentId);
+      const toastText = status === 'approved'
+        ? `${module?.actividad || 'El módulo'} fue aprobado con ${state.score} puntos.`
+        : status === 'changes'
+          ? `${module?.actividad || 'El módulo'} fue devuelto para ajustes.`
+          : `${module?.actividad || 'El módulo'} quedó en revisión.`;
+      closeModal();
+      showToast('Revisión guardada', toastText, status === 'changes' ? 'info' : 'success');
       render();
     }
 
@@ -1326,16 +1556,18 @@
 
     function renderAgentCalendar(agentId){
       const body = document.getElementById('agentCalendarBody');
-      body.innerHTML = curriculum.map(module => {
+      body.innerHTML = curriculum.map((module, index) => {
         const state = moduleState(agentId, module.id);
-        const status = visibleStatus(state);
+        const unlocked = isModuleUnlocked(agentId, module.id);
+        const status = unlocked ? visibleStatus(state) : { text:'Bloqueado', cls:'locked' };
         return `
-          <tr class="clickable-row" data-open-agent-module="${module.id}">
+          <tr class="${unlocked ? 'clickable-row' : 'locked-row'}" ${unlocked ? `data-open-agent-module="${module.id}"` : ''}>
             <td>${module.fecha}</td>
             <td>${module.dia}</td>
             <td>
               <span class="activity-link">${module.actividad}</span>
               <span class="subline">${module.descripcion}</span>
+              ${index === 0 ? '<span class="subline">Disponible desde el inicio.</span>' : (!unlocked ? '<span class="subline">Se desbloquea al enviar a revisión el módulo anterior.</span>' : '')}
             </td>
             <td><span class="badge ${module.tipo}">${typeLabel(module.tipo)}</span></td>
             <td><span class="badge ${status.cls}">${status.text}</span></td>
@@ -1456,7 +1688,7 @@
 
       if (!usersRegistry[email] || usersRegistry[email].activo === false) {
         msg.className = 'message show error';
-        msg.textContent = 'Correo no autorizado en esta versión.';
+        msg.textContent = 'Correo no autorizado, contacta a la Ext. 8015.';
         return;
       }
 
@@ -1476,7 +1708,6 @@
       if (e.target.id === 'moduleModal') { closeModal(); return; }
       if (e.target.id === 'accessModal') { closeAccessModal(); return; }
       if (e.target.id === 'themeToggleLogin' || e.target.id === 'themeToggleApp') { toggleTheme(); return; }
-      if (e.target.id === 'refreshBtn') { await refreshCloudData(); render(); return; }
       if (e.target.id === 'addUserBtn') { await saveUserFromAdmin(); return; }
       if (e.target.id === 'openAccessModalBtn') { openAccessModal(); return; }
 
@@ -1514,13 +1745,7 @@
         return;
       }
 
-      const statusBtn = e.target.closest('[data-set-status]');
-      if (statusBtn) {
-        setAgentModuleStatus(statusBtn.dataset.agent, statusBtn.dataset.module, statusBtn.dataset.status);
-        return;
-      }
-
-      const submitBtn = e.target.closest('[data-submit-review]');
+            const submitBtn = e.target.closest('[data-submit-review]');
       if (submitBtn && session?.role === 'agente') {
         submitForReview(session.agentId, submitBtn.dataset.submitReview);
         return;
@@ -1533,14 +1758,16 @@
       }
 
       if (e.target.id === 'saveReviewBtn') {
+        const score = document.getElementById('reviewScore').value;
         const feedback = document.getElementById('reviewFeedback').value;
         const status = document.getElementById('reviewStatus').value;
-        applyReview(selectedAdminAgentId, selectedReviewModuleId, feedback, status);
+        applyReview(selectedAdminAgentId, selectedReviewModuleId, score, feedback, status);
       }
     });
 
     document.addEventListener('input', (e) => {
       if (e.target.dataset.agent && e.target.dataset.module && e.target.dataset.field) {
+        if (e.target.type === 'radio') return;
         updateAgentField(e.target.dataset.agent, e.target.dataset.module, e.target.dataset.field, e.target.value);
       }
     });
