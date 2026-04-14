@@ -361,8 +361,8 @@
       <div class="login-top">
         <div>
           <h1>Capacitación</h1>
-          <h1>------------------</h1>
-           <h1>Inscripción es Cuestión de Ventas</h1>
+          <h1> ------------------ </h1>
+          <h1>Inscripción es Cuestión de Ventas</h1>
           <p>Ingresa con tu correo institucional para acceder al contenido.</p>
         </div>
       </div>
@@ -600,7 +600,7 @@
       { id:'a1', fecha:'15 Abr', dia:'Miércoles', actividad:'Actividad I', tipo:'actividad', descripcion:'Ejercicio de clasificación: identificar si cada enunciado corresponde a una característica o a un beneficio.' },
       { id:'g3', fecha:'16 Abr', dia:'Jueves', actividad:'Grabación 3', tipo:'grabacion', descripcion:'Comunicación asertiva y presentación de la oferta.' },
       { id:'g4', fecha:'17 Abr', dia:'Viernes', actividad:'Grabación 4', tipo:'grabacion', descripcion:'El arte de manejar objeciones con seguridad.' },
-      { id:'a2', fecha:'20 Abr', dia:'Lunes', actividad:'Actividad II', tipo:'actividad', descripcion:'Roleplay escrito: redacción de guiones ante objeciones.' },
+      { id:'a2', fecha:'27 Abr', dia:'Lunes', actividad:'Actividad II', tipo:'actividad', descripcion:'Realizar test de personalidad, subir captura del resultado y explicar sus puntos fuertes.' },
       { id:'g5', fecha:'21 Abr', dia:'Martes', actividad:'Grabación 5', tipo:'grabacion', descripcion:'Técnicas de cierre y compromiso inmediato.' },
       { id:'g6', fecha:'22 Abr', dia:'Miércoles', actividad:'Grabación 6', tipo:'grabacion', descripcion:'Seguimiento estratégico y cierre de ciclo.' },
       { id:'ev1', fecha:'23 Abr', dia:'Jueves', actividad:'Evaluación', tipo:'evaluacion', descripcion:'Quiz final para verificación de conocimientos.' }
@@ -713,6 +713,15 @@
 
     function formatDateTime(iso){
       return iso ? new Date(iso).toLocaleString('es-GT') : 'Sin registro';
+    }
+
+    function readFileAsBase64(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     function showToast(title, text = '', variant = 'success'){
@@ -859,12 +868,9 @@
 
       if (module.id === 'a2') {
         const required = [
-          ['scenario','contexto del caso'],
-          ['objection1','objeción 1'],
-          ['answer1','respuesta del asesor 1'],
-          ['objection2','objeción 2'],
-          ['answer2','respuesta del asesor 2'],
-          ['closingScript','cierre propuesto']
+          ['personalityType','resultado de personalidad'],
+          ['personalityScreenshot','captura del resultado'],
+          ['personalityStrengths','puntos fuertes de la personalidad']
         ];
         return required.filter(([key]) => !String(state.fields[key] || '').trim()).map(([,label]) => label);
       }
@@ -1117,35 +1123,35 @@
       const state = moduleState(agentId, module.id);
       return `
         <div class="subcard">
-          <h5>Actividad II — Roleplay escrito</h5>
-          <div class="field">
-            <label>Contexto del caso</label>
-            <textarea data-agent="${agentId}" data-module="${module.id}" data-field="scenario" placeholder="Describe el perfil del prospecto y la situación">${safe(state.fields.scenario)}</textarea>
-          </div>
-          <div class="grid-2" style="margin-top:14px">
-            <div class="field">
-              <label>Objeción 1</label>
-              <textarea data-agent="${agentId}" data-module="${module.id}" data-field="objection1" placeholder="Ej. Está muy caro">${safe(state.fields.objection1)}</textarea>
-            </div>
-            <div class="field">
-              <label>Respuesta del asesor 1</label>
-              <textarea data-agent="${agentId}" data-module="${module.id}" data-field="answer1" placeholder="Redacta una respuesta clara y segura">${safe(state.fields.answer1)}</textarea>
-            </div>
-          </div>
-          <div class="grid-2" style="margin-top:14px">
-            <div class="field">
-              <label>Objeción 2</label>
-              <textarea data-agent="${agentId}" data-module="${module.id}" data-field="objection2" placeholder="Agrega una segunda objeción">${safe(state.fields.objection2)}</textarea>
-            </div>
-            <div class="field">
-              <label>Respuesta del asesor 2</label>
-              <textarea data-agent="${agentId}" data-module="${module.id}" data-field="answer2" placeholder="Redacta una segunda respuesta">${safe(state.fields.answer2)}</textarea>
-            </div>
-          </div>
+          <h5>Actividad II — Test de personalidad</h5>
+          <div class="hint">Realiza el test en el siguiente enlace, sube una captura del resultado y explica los puntos fuertes de la personalidad obtenida.</div>
           <div class="field" style="margin-top:14px">
-            <label>Cierre propuesto</label>
-            <textarea data-agent="${agentId}" data-module="${module.id}" data-field="closingScript" placeholder="Escribe el cierre con siguiente paso claro">${safe(state.fields.closingScript)}</textarea>
+            <label>Enlace al test</label>
+            <div style="padding:14px 15px;border:1px solid var(--line);border-radius:16px;background:var(--bg-2)">
+              <a href="https://ejemplo.com/test-personalidad" target="_blank" rel="noopener noreferrer" style="color:var(--blue);font-weight:700;text-decoration:none">Abrir test de personalidad</a>
+            </div>
           </div>
+          <div class="grid-2" style="margin-top:14px">
+            <div class="field">
+              <label>¿Qué personalidad te salió?</label>
+              <input data-agent="${agentId}" data-module="${module.id}" data-field="personalityType" value="${safe(state.fields.personalityType)}" placeholder="Ej. Analítico, Líder, Creativo..." />
+            </div>
+            <div class="field">
+              <label>Captura del resultado</label>
+              <input type="file" accept="image/*" data-agent="${agentId}" data-module="${module.id}" data-field="personalityScreenshot" />
+            </div>
+          </div>
+          ${state.fields.personalityScreenshot ? `
+            <div class="subcard" style="margin-top:14px">
+              <h5>Vista previa de la captura</h5>
+              <img src="${state.fields.personalityScreenshot}" alt="Resultado del test de personalidad" style="display:block;max-width:100%;max-height:320px;border-radius:16px;border:1px solid var(--line);box-shadow:var(--shadow-soft);object-fit:contain;background:#fff" />
+            </div>
+          ` : ''}
+          <div class="field" style="margin-top:14px">
+            <label>Puntos fuertes de tu resultado</label>
+            <textarea data-agent="${agentId}" data-module="${module.id}" data-field="personalityStrengths" placeholder="Explica los puntos fuertes de la personalidad que te salió">${safe(state.fields.personalityStrengths)}</textarea>
+          </div>
+          <div class="hint">La imagen se guardará en base64 dentro del registro del módulo. Procura subir una captura ligera.</div>
         </div>
       `;
     }
@@ -1221,10 +1227,10 @@
           ${buildLearningContentForAgent(agentId, module)}
 
           <div class="subcard">
-            <h5>Retroalimentación del Revisor</h5>
+            <h5>Retroalimentación del revisor</h5>
             <div class="field">
               <label>Feedback</label>
-              <textarea disabled>${safe(state.feedback || 'Aún no hay comentarios del Revisor.')}</textarea>
+              <textarea disabled>${safe(state.feedback || 'Aún no hay comentarios del revisor.')}</textarea>
             </div>
             <div class="hint">Revisado: ${formatDateTime(state.reviewedAt)}</div>
           </div>
@@ -1251,7 +1257,10 @@
         answer1:'Respuesta del asesor 1',
         objection2:'Objeción 2',
         answer2:'Respuesta del asesor 2',
-        closingScript:'Cierre propuesto'
+        closingScript:'Cierre propuesto',
+        personalityType:'Resultado de personalidad',
+        personalityScreenshot:'Captura del resultado',
+        personalityStrengths:'Puntos fuertes de la personalidad'
       };
       return map[key] || key.replace(/([A-Z])/g, ' $1');
     }
@@ -1286,7 +1295,9 @@
       return entries.map(([key,value]) => `
         <div class="subcard" style="margin-top:12px">
           <h5>${safe(formatFieldLabel(key))}</h5>
-          <div style="white-space:pre-wrap;color:var(--muted)">${safe(value)}</div>
+          ${key === 'personalityScreenshot'
+            ? `<img src="${value}" alt="Captura del resultado" style="display:block;max-width:100%;max-height:320px;border-radius:16px;border:1px solid var(--line);box-shadow:var(--shadow-soft);object-fit:contain;background:#fff" />`
+            : `<div style="white-space:pre-wrap;color:var(--muted)">${safe(value)}</div>`}
         </div>
       `).join('');
     }
@@ -1336,7 +1347,7 @@
             </div>
             <div class="hint">Puedes asignar manualmente el puntaje del módulo según la calidad de la respuesta entregada.</div>
             <div class="field" style="margin-top:12px">
-              <label>Feedback del Revisor</label>
+              <label>Feedback del revisor</label>
               <textarea id="reviewFeedback" placeholder="Escribe observaciones, recomendaciones o mejoras">${safe(state.feedback)}</textarea>
             </div>
             <div class="actions" style="margin-top:14px">
@@ -1567,7 +1578,6 @@
             <td>
               <span class="activity-link">${module.actividad}</span>
               <span class="subline">${module.descripcion}</span>
-              ${index === 0 ? '<span class="subline">Disponible desde el inicio.</span>' : (!unlocked ? '<span class="subline">Se desbloquea al enviar a revisión el módulo anterior.</span>' : '')}
             </td>
             <td><span class="badge ${module.tipo}">${typeLabel(module.tipo)}</span></td>
             <td><span class="badge ${status.cls}">${status.text}</span></td>
@@ -1688,7 +1698,7 @@
 
       if (!usersRegistry[email] || usersRegistry[email].activo === false) {
         msg.className = 'message show error';
-        msg.textContent = 'Correo no autorizado, contacta a la Ext. 8015.';
+        msg.textContent = 'Correo no autorizado en esta versión.';
         return;
       }
 
@@ -1767,13 +1777,25 @@
 
     document.addEventListener('input', (e) => {
       if (e.target.dataset.agent && e.target.dataset.module && e.target.dataset.field) {
-        if (e.target.type === 'radio') return;
+        if (e.target.type === 'radio' || e.target.type === 'file') return;
         updateAgentField(e.target.dataset.agent, e.target.dataset.module, e.target.dataset.field, e.target.value);
       }
     });
 
-    document.addEventListener('change', (e) => {
+    document.addEventListener('change', async (e) => {
       if (e.target.dataset.agent && e.target.dataset.module && e.target.dataset.field) {
+        if (e.target.type === 'file') {
+          const file = e.target.files?.[0];
+          if (!file) {
+            updateAgentField(e.target.dataset.agent, e.target.dataset.module, e.target.dataset.field, '');
+            return;
+          }
+          const base64 = await readFileAsBase64(file);
+          updateAgentField(e.target.dataset.agent, e.target.dataset.module, e.target.dataset.field, base64);
+          showToast('Captura cargada', 'La imagen del resultado fue guardada correctamente.', 'success');
+          render();
+          return;
+        }
         updateAgentField(e.target.dataset.agent, e.target.dataset.module, e.target.dataset.field, e.target.value);
       }
     });
