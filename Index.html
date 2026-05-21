@@ -494,8 +494,6 @@
           <table>
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Día</th>
                 <th>Actividad</th>
                 <th>Tipo</th>
                 <th>Estado</th>
@@ -1714,8 +1712,6 @@
         const status = unlocked ? visibleStatus(state) : { text:'Bloqueado', cls:'locked' };
         return `
           <tr class="${unlocked ? 'clickable-row' : 'locked-row'}" ${unlocked ? `data-open-agent-module="${module.id}"` : ''}>
-            <td>${module.fecha}</td>
-            <td>${module.dia}</td>
             <td>
               <span class="activity-link">${module.actividad}</span>
               <span class="subline">${module.descripcion}</span>
@@ -1760,7 +1756,6 @@
           <table>
             <thead>
               <tr>
-                <th>Fecha</th>
                 <th>Actividad</th>
                 <th>Estado</th>
                 <th>Enviado</th>
@@ -1774,7 +1769,6 @@
                 const status = visibleStatus(state);
                 return `
                   <tr>
-                    <td>${module.fecha}</td>
                     <td>
                       <span class="activity-link">${module.actividad}</span>
                       <span class="subline">${module.descripcion}</span>
@@ -1903,7 +1897,7 @@
         return;
       }
 
-            const submitBtn = e.target.closest('[data-submit-review]');
+      const submitBtn = e.target.closest('[data-submit-review]');
       if (submitBtn && session?.role === 'agente') {
         submitForReview(session.agentId, submitBtn.dataset.submitReview);
         return;
