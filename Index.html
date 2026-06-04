@@ -431,15 +431,11 @@
           <h1>Capacitación</h1>
           <h1> ------------------ </h1>
           <h1>Inscripción es Cuestión de Ventas</h1>
-          <p>Ingresa con tu correo institucional para acceder al contenido.</p>
+          <p>Ingresa de forma segura con tu cuenta institucional para acceder al contenido.</p>
         </div>
       </div>
-      <div class="field">
-        <label>Correo institucional</label>
-        <input id="loginEmail" type="email" placeholder="nombre@dominio.com" />
-      </div>
       <div class="actions" style="margin-top:18px">
-        <button class="btn btn-primary" id="loginBtn">Ingresar</button>
+        <button class="btn btn-primary" id="loginBtn" style="width: 100%;">Ingresar con Microsoft</button>
       </div>
       <div id="loginMessage" class="message"></div>
     </div>
@@ -666,6 +662,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -736,6 +733,8 @@
     const PROGRESS_COLLECTION = 'capacitacion_kpta_progress';
 
     let db = null;
+    let auth = null;
+    let provider = null;
     let cloudReady = false;
     let usersRegistry = { ...BOOTSTRAP_USERS };
     let store = { agents:{} };
@@ -892,9 +891,7 @@
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem(THEME_KEY, theme);
       const label = theme === 'dark' ? '☀️ Modo claro' : '🌙 Modo oscuro';
-      const btnLogin = document.getElementById('themeToggleLogin');
       const btnApp = document.getElementById('themeToggleApp');
-      if (btnLogin) btnLogin.textContent = label;
       if (btnApp) btnApp.textContent = label;
     }
 
@@ -1038,6 +1035,13 @@
       try {
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
+        auth = firebase.auth();
+        provider = new firebase.auth.OAuthProvider('microsoft.com');
+        
+        provider.setCustomParameters({
+            tenant: "b13b704f-c405-40bf-bdd1-2f2e151a21b0"
+        });
+
         cloudReady = true;
         await syncBootstrapUsers();
         await refreshCloudData();
@@ -1815,7 +1819,6 @@
       closeAccessModal();
       document.getElementById('mainApp').classList.add('hidden');
       document.getElementById('loginView').classList.remove('hidden');
-      document.getElementById('loginEmail').value = '';
     }
 
     function render(){
@@ -1826,28 +1829,26 @@
       reopenCurrentModal();
     }
 
-    async function login(){
-      const email = normalizeEmail(document.getElementById('loginEmail').value);
+    async function loginWithMicrosoft() {
       const msg = document.getElementById('loginMessage');
-      await refreshCloudData();
-
-      if (!usersRegistry[email] || usersRegistry[email].activo === false) {
+      try {
+        msg.className = 'message show';
+        msg.textContent = 'Conectando con Microsoft...';
+        await auth.signInWithPopup(provider);
+      } catch (error) {
+        console.error(error);
         msg.className = 'message show error';
-        msg.textContent = 'Correo no autorizado, contactar Ext. 8015.';
-        return;
+        msg.textContent = 'Error al iniciar sesión. Intenta de nuevo.';
       }
+    }
 
-      const user = usersRegistry[email];
-      session = { email, role: user.role, agentId: user.agentId || null };
-      saveSession();
-      msg.className = 'message show success';
-      msg.textContent = 'Acceso correcto.';
-      showApp();
+    async function logoutApp() {
+      await auth.signOut();
     }
 
     document.addEventListener('click', async (e) => {
-      if (e.target.id === 'loginBtn') { await login(); return; }
-      if (e.target.id === 'logoutBtn') { clearSession(); showLogin(); return; }
+      if (e.target.id === 'loginBtn') { await loginWithMicrosoft(); return; }
+      if (e.target.id === 'logoutBtn') { await logoutApp(); return; }
       if (e.target.id === 'closeModalBtn') { closeModal(); return; }
       if (e.target.id === 'closeAccessModalBtn') { closeAccessModal(); return; }
       if (e.target.id === 'moduleModal') { closeModal(); return; }
@@ -1942,10 +1943,6 @@
       }
     });
 
-    document.getElementById('loginEmail').addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') await login();
-    });
-
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (document.getElementById('moduleModal').classList.contains('show')) closeModal();
@@ -1956,8 +1953,37 @@
     (async function bootstrap(){
       applyTheme(getTheme());
       await initFirebase();
-      if (session && usersRegistry[session.email]) showApp();
-      else showLogin();
+      
+      // Listener de autenticación de Firebase
+      auth.onAuthStateChanged(async (user) => {
+        const msg = document.getElementById('loginMessage');
+        if (user) {
+          const email = normalizeEmail(user.email);
+          await refreshCloudData();
+
+          if (!usersRegistry[email] || usersRegistry[email].activo === false) {
+            if(msg) {
+                msg.className = 'message show error';
+                msg.textContent = 'Tu correo no está autorizado. Solicita acceso a un administrador.';
+            }
+            await auth.signOut();
+            return;
+          }
+
+          const regUser = usersRegistry[email];
+          session = { email, role: regUser.role, agentId: regUser.agentId || null };
+          saveSession();
+          
+          if(msg) {
+              msg.className = 'message show success';
+              msg.textContent = 'Acceso correcto.';
+          }
+          showApp();
+        } else {
+          clearSession();
+          showLogin();
+        }
+      });
     })();
   </script>
 </body>
