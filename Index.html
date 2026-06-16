@@ -135,6 +135,30 @@
     .btn-sm{padding:9px 12px;border-radius:10px;font-size:13px}
     .btn-theme{min-width:152px}
 
+    /* Estilos específicos para los botones de login */
+    .btn-login {
+      width: 100%;
+      background: var(--card-soft);
+      color: var(--text);
+      border: 1px solid var(--line);
+      font-size: 15px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .btn-login:hover {
+      background: var(--panel);
+      border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .btn-login svg {
+      flex-shrink: 0;
+    }
+
     .message{margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);display:none}
     .message.show{display:block; animation: fadeUp 0.3s ease; will-change: opacity, transform;}
     .message.error{background:color-mix(in srgb, var(--red) 10%, transparent);color:color-mix(in srgb, var(--red) 88%, #fff)}
@@ -348,8 +372,26 @@
           <p>Ingresa de forma segura con tu cuenta institucional para acceder al contenido.</p>
         </div>
       </div>
-      <div class="actions" style="margin-top:18px">
-        <button class="btn btn-primary" id="loginBtn" style="width: 100%;">Ingresar con Microsoft</button>
+      
+      <div class="actions" style="margin-top:24px; display:flex; flex-direction:column; gap:14px;">
+        <button class="btn btn-login" id="loginBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21">
+            <path fill="#f25022" d="M1 1h9v9H1z"/>
+            <path fill="#00a4ef" d="M11 1h9v9h-9z"/>
+            <path fill="#7fba00" d="M1 11h9v9H1z"/>
+            <path fill="#ffb900" d="M11 11h9v9h-9z"/>
+          </svg>
+          Ingresar con Microsoft
+        </button>
+        <button class="btn btn-login" id="loginGoogleBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
+            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571c.001-.001.002-.001.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+          </svg>
+          Ingresar con Google
+        </button>
       </div>
       <div id="loginMessage" class="message"></div>
     </div>
@@ -658,6 +700,7 @@
     let db = null;
     let auth = null;
     let provider = null;
+    let googleProvider = null; // Nuevo provider para Google
     let cloudReady = false;
     let usersRegistry = { ...BOOTSTRAP_USERS };
     let store = { agents:{} };
@@ -974,11 +1017,14 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
-        provider = new firebase.auth.OAuthProvider('microsoft.com');
         
+        provider = new firebase.auth.OAuthProvider('microsoft.com');
         provider.setCustomParameters({
             tenant: "b13b704f-c405-40bf-bdd1-2f2e151a21b0"
         });
+        
+        // Inicialización del proveedor de Google
+        googleProvider = new firebase.auth.GoogleAuthProvider();
 
         cloudReady = true;
         await syncBootstrapUsers();
@@ -1819,6 +1865,7 @@
       reopenCurrentModal();
     }
 
+    // Inicio de sesión con Microsoft
     async function loginWithMicrosoft() {
       const msg = document.getElementById('loginMessage');
       try {
@@ -1828,7 +1875,21 @@
       } catch (error) {
         console.error(error);
         msg.className = 'message show error';
-        msg.textContent = 'Error al iniciar sesión. Intenta de nuevo.';
+        msg.textContent = 'Error al iniciar sesión con Microsoft. Intenta de nuevo.';
+      }
+    }
+
+    // Inicio de sesión con Google
+    async function loginWithGoogle() {
+      const msg = document.getElementById('loginMessage');
+      try {
+        msg.className = 'message show';
+        msg.textContent = 'Conectando con Google...';
+        await auth.signInWithPopup(googleProvider);
+      } catch (error) {
+        console.error(error);
+        msg.className = 'message show error';
+        msg.textContent = 'Error al iniciar sesión con Google. Intenta de nuevo.';
       }
     }
 
@@ -1837,7 +1898,10 @@
     }
 
     document.addEventListener('click', async (e) => {
-      if (e.target.id === 'loginBtn') { await loginWithMicrosoft(); return; }
+      // Uso de .closest() para asegurar que el clic dentro del SVG también dispare el botón
+      if (e.target.closest('#loginBtn')) { await loginWithMicrosoft(); return; }
+      if (e.target.closest('#loginGoogleBtn')) { await loginWithGoogle(); return; }
+      
       if (e.target.id === 'logoutBtn') { await logoutApp(); return; }
       if (e.target.id === 'closeModalBtn') { closeModal(); return; }
       if (e.target.id === 'closeAccessModalBtn') { closeAccessModal(); return; }
