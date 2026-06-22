@@ -159,6 +159,20 @@
       flex-shrink: 0;
     }
 
+    .login-password-form{
+      display:grid;
+      gap:12px;
+      margin-top:2px;
+      padding-top:2px;
+    }
+    .login-password-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width:620px){
+      .login-password-grid{grid-template-columns:1fr}
+    }
     .message{margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);display:none}
     .message.show{display:block; animation: fadeUp 0.3s ease; will-change: opacity, transform;}
     .message.error{background:color-mix(in srgb, var(--red) 10%, transparent);color:color-mix(in srgb, var(--red) 88%, #fff)}
@@ -392,6 +406,25 @@
           </svg>
           Ingresar con Google
         </button>
+        <form class="login-password-form" id="emailPasswordLoginForm">
+          <div class="login-password-grid">
+            <div class="field">
+              <label for="emailLoginInput">Correo</label>
+              <input id="emailLoginInput" type="email" autocomplete="email" placeholder="correo@iluni.us" />
+            </div>
+            <div class="field">
+              <label for="passwordLoginInput">Contraseña</label>
+              <input id="passwordLoginInput" type="password" autocomplete="current-password" placeholder="Contraseña" />
+            </div>
+          </div>
+          <button class="btn btn-login" id="loginEmailBtn" type="submit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            Ingresar con correo y contraseña
+          </button>
+        </form>
       </div>
       <div id="loginMessage" class="message"></div>
     </div>
@@ -720,6 +753,12 @@
       return EXEMPT_EMAILS.includes(normalizeEmail(email));
     }
 
+    function isEmailAuthorizedForPasswordLogin(email) {
+      const normalized = normalizeEmail(email);
+      const user = usersRegistry[normalized] || BOOTSTRAP_USERS[normalized];
+      return !!user && user.activo !== false;
+    }
+
     function isSessionDateAllowed() {
       const now = new Date();
       const d = now.getDate();
@@ -1029,8 +1068,8 @@
         googleProvider = new firebase.auth.GoogleAuthProvider();
 
         cloudReady = true;
-        await syncBootstrapUsers();
-        await refreshCloudData();
+        usersRegistry = { ...BOOTSTRAP_USERS };
+        store = loadLocalBackup();
       } catch (error) {
         console.error('Firebase no disponible:', error);
         cloudReady = false;
@@ -1123,9 +1162,18 @@
         if (!selectedAdminAgentId || !store.agents[selectedAdminAgentId]) selectedAdminAgentId = firstAgent;
         return;
       }
-      await loadUsersFromCloud();
-      await ensureProgressDocsForAgents();
-      await loadProgressFromCloud();
+      try {
+        await loadUsersFromCloud();
+        await ensureProgressDocsForAgents();
+        await loadProgressFromCloud();
+      } catch (error) {
+        console.error('No se pudo sincronizar con Firestore:', error);
+        cloudReady = false;
+        usersRegistry = { ...BOOTSTRAP_USERS, ...usersRegistry };
+        store = loadLocalBackup();
+        const firstAgent = Object.keys(store.agents)[0] || null;
+        if (!selectedAdminAgentId || !store.agents[selectedAdminAgentId]) selectedAdminAgentId = firstAgent;
+      }
     }
 
     async function saveAgentProgress(agentId){
@@ -1895,6 +1943,58 @@
       }
     }
 
+    // Inicio de sesión con correo y contraseña de Firebase
+    async function loginWithEmailPassword() {
+      const msg = document.getElementById('loginMessage');
+      const email = normalizeEmail(document.getElementById('emailLoginInput')?.value);
+      const password = document.getElementById('passwordLoginInput')?.value || '';
+
+      if (!email || !password) {
+        msg.className = 'message show error';
+        msg.textContent = 'Ingresa correo y contraseña para continuar.';
+        return;
+      }
+
+      if (!isEmailAuthorizedForPasswordLogin(email)) {
+        msg.className = 'message show error';
+        msg.textContent = 'Tu correo no está autorizado. Solicita acceso a un administrador.';
+        return;
+      }
+
+      try {
+        msg.className = 'message show';
+        msg.textContent = 'Validando correo y contraseña...';
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+        console.error(error);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+          try {
+            msg.className = 'message show';
+            msg.textContent = 'Primer ingreso detectado. Registrando cuenta...';
+            await auth.createUserWithEmailAndPassword(email, password);
+            return;
+          } catch (registerError) {
+            console.error(registerError);
+            if (registerError.code === 'auth/email-already-in-use') {
+              msg.className = 'message show error';
+              msg.textContent = 'La cuenta ya existe. Revisa que la contraseña sea correcta.';
+              return;
+            }
+            if (registerError.code === 'auth/operation-not-allowed') {
+              msg.className = 'message show error';
+              msg.textContent = 'El acceso con correo y contraseña no está habilitado en Firebase.';
+              return;
+            }
+            msg.className = 'message show error';
+            msg.textContent = 'No se pudo registrar la cuenta. Revisa los datos e intenta de nuevo.';
+            return;
+          }
+        }
+        msg.className = 'message show error';
+        msg.textContent = 'Correo o contraseña incorrectos. Intenta de nuevo.';
+      }
+    }
+
     async function logoutApp() {
       await auth.signOut();
     }
@@ -1968,6 +2068,12 @@
       }
     });
 
+    document.addEventListener('submit', async (e) => {
+      if (e.target.id === 'emailPasswordLoginForm') {
+        e.preventDefault();
+        await loginWithEmailPassword();
+      }
+    });
     document.addEventListener('input', (e) => {
       if (e.target.dataset.agent && e.target.dataset.module && e.target.dataset.field) {
         if (e.target.type === 'radio' || e.target.type === 'file') return;
