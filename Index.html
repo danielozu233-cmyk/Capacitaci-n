@@ -766,6 +766,17 @@
       return (d >= 18 && d <= 27 && day !== 0);
     }
 
+    function isFinalEvaluationExtensionAllowed(moduleId, email) {
+      const now = new Date();
+      return (
+        moduleId === 'ev1' &&
+        !isUserExempt(email) &&
+        now.getFullYear() === 2026 &&
+        now.getMonth() === 5 &&
+        now.getDate() === 30
+      );
+    }
+
     function blankModule(){
       return {
         status:'pendiente',
@@ -1595,10 +1606,10 @@
       const module = moduleById(moduleId) || curriculum[0];
       const state = moduleState(agentId, moduleId);
       const isCompleted = state.status === 'completado' || state.reviewStatus === 'approved';
-      const isExempt = session ? isUserExempt(session.email) : false;
+      const sessionEmail = session ? session.email : '';
       
-      if (!isSessionDateAllowed() && !isCompleted && !isExempt) {
-        alert('El acceso al portal de capacitación está restringido. Solo puedes acceder a módulos nuevos del 18 al 27 (excluyendo domingos).');
+      if (!isSessionDateAllowed() && !isFinalEvaluationExtensionAllowed(moduleId, sessionEmail) && !isCompleted) {
+        alert('El acceso al portal de capacitación está restringido. Solo puedes acceder a módulos nuevos del 18 al 27 (excluyendo domingos). La evaluación final tiene acceso extendido hoy para agentes sin excepción.');
         return;
       }
 
@@ -1777,18 +1788,20 @@
     function renderAgentCalendar(agentId){
       const body = document.getElementById('agentCalendarBody');
       const isExempt = session ? isUserExempt(session.email) : false;
+      const sessionEmail = session ? session.email : '';
       const dateAllowed = isSessionDateAllowed() || isExempt;
       
       body.innerHTML = curriculum.map((module, index) => {
         const state = moduleState(agentId, module.id);
         const seqUnlocked = isModuleUnlocked(agentId, module.id);
         const isCompleted = state.status === 'completado' || state.reviewStatus === 'approved';
+        const moduleDateAllowed = dateAllowed || isFinalEvaluationExtensionAllowed(module.id, sessionEmail);
         
-        const unlocked = (seqUnlocked && dateAllowed) || isCompleted;
+        const unlocked = (seqUnlocked && moduleDateAllowed) || isCompleted;
 
         let sText = '';
         let sCls = '';
-        if (!dateAllowed && !isCompleted) {
+        if (!moduleDateAllowed && !isCompleted) {
             sText = 'Fuera de fecha';
             sCls = 'locked';
         } else if (!seqUnlocked) {
