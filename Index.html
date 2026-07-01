@@ -1607,8 +1607,9 @@
       const state = moduleState(agentId, moduleId);
       const isCompleted = state.status === 'completado' || state.reviewStatus === 'approved';
       const sessionEmail = session ? session.email : '';
+      const isExempt = isUserExempt(sessionEmail);
       
-      if (!isSessionDateAllowed() && !isFinalEvaluationExtensionAllowed(moduleId, sessionEmail) && !isCompleted) {
+      if (!isSessionDateAllowed() && !isExempt && !isFinalEvaluationExtensionAllowed(moduleId, sessionEmail) && !isCompleted) {
         alert('El acceso al portal de capacitación está restringido. Solo puedes acceder a módulos nuevos del 18 al 27 (excluyendo domingos). La evaluación final tiene acceso extendido hoy para agentes sin excepción.');
         return;
       }
