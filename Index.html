@@ -111,6 +111,12 @@
       box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
       transform: translateY(-1px);
     }
+    .check-card{
+      display:flex;align-items:center;gap:10px;border:1px solid var(--line);
+      border-radius:8px;padding:12px 14px;background:color-mix(in srgb,var(--surface) 94%, transparent);
+      color:var(--text);font-size:13px;font-weight:700;
+    }
+    .check-card input{width:16px;height:16px;accent-color:var(--green)}
 
     .actions{display:flex;gap:10px;flex-wrap:wrap}
     .btn{
@@ -586,6 +592,34 @@
                 <input id="newUserAgentId" placeholder="Opcional. Se genera automáticamente" />
               </div>
             </div>
+            <div class="grid-2" style="margin-top:14px">
+              <div class="field">
+                <label>Fecha de inicio del curso</label>
+                <input id="newAccessStartDate" type="date" />
+              </div>
+              <div class="field">
+                <label>Fecha de finalización del curso</label>
+                <input id="newAccessEndDate" type="date" />
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top:14px">
+              <label class="check-card">
+                <input id="newIncludeSaturday" type="checkbox" checked />
+                <span>Contar sábados</span>
+              </label>
+              <label class="check-card">
+                <input id="newIncludeSunday" type="checkbox" />
+                <span>Contar domingos</span>
+              </label>
+              <label class="check-card">
+                <input id="newNoDateRestriction" type="checkbox" />
+                <span>Sin restricción de fechas</span>
+              </label>
+              <label class="check-card">
+                <input id="newUnlockAllModules" type="checkbox" />
+                <span>Actividades desbloqueadas desde el inicio</span>
+              </label>
+            </div>
             <div class="actions" style="margin-top:14px">
               <button class="btn btn-primary" id="addUserBtn">Guardar usuario</button>
             </div>
@@ -602,6 +636,7 @@
                     <th>Correo</th>
                     <th>Rol</th>
                     <th>ID</th>
+                    <th>Acceso</th>
                     <th>Acción</th>
                   </tr>
                 </thead>
@@ -672,15 +707,21 @@
       'dsvag06@gmail.com': { email: 'dsvag06@gmail.com', nombre: 'Dafne Alvarez', role: 'agente', agentId: 'dafne_alvarez' },
       'altanmaria18@gmail.com': { email: 'altanmaria18@gmail.com', nombre: 'María Altán', role: 'agente', agentId: 'maria_altan' },
       'aghernandez@upana.edu.gt': { email: 'aghernandez@upana.edu.gt', nombre: 'Ana Gabriela Hernández', role: 'agente', agentId: 'ana_hernandez' },
-      'jcarcamo@iluni.us': { email: 'jcarcamo@iluni.us', nombre: 'Jenny Cárcamo', role: 'agente', agentId: 'jenny_carcamo' }
-      'ljgarcia@upana.edu.gt': { email: 'ljgarcia@upana.edu.gt', nombre: 'Lindon Garcia', role: 'agente', agentId: 'lindon_garcia' }
+      'jcarcamo@iluni.us': { email: 'jcarcamo@iluni.us', nombre: 'Jenny Cárcamo', role: 'agente', agentId: 'jenny_carcamo' },
+      'ljgarcia@upana.edu.gt': {
+        email: 'ljgarcia@upana.edu.gt',
+        nombre: 'Lindon Garcia',
+        role: 'agente',
+        agentId: 'lindon_garcia',
+        access: { noDateRestriction:true, unlockAll:false, includeSaturday:true, includeSunday:true }
+      }
     };
 
     const EXEMPT_EMAILS = [
       'dsvag06@gmail.com',
       'altanmaria18@gmail.com',
       'aghernandez@upana.edu.gt',
-      'jcarcamo@iluni.us'
+      'jcarcamo@iluni.us',
       'ljgarcia@upana.edu.gt'
     ];
 
@@ -751,8 +792,42 @@
       return String(email || '').trim().toLowerCase();
     }
 
+    function defaultAccessPolicy(){
+      return {
+        startDate:'',
+        endDate:'',
+        includeSaturday:true,
+        includeSunday:false,
+        noDateRestriction:false,
+        unlockAll:false
+      };
+    }
+
+    function normalizeAccessPolicy(access = {}){
+      const base = defaultAccessPolicy();
+      return {
+        ...base,
+        ...access,
+        includeSaturday: access.includeSaturday !== false,
+        includeSunday: access.includeSunday === true,
+        noDateRestriction: access.noDateRestriction === true,
+        unlockAll: access.unlockAll === true
+      };
+    }
+
+    function userByEmail(email){
+      const normalized = normalizeEmail(email);
+      return usersRegistry[normalized] || BOOTSTRAP_USERS[normalized] || null;
+    }
+
+    function accessPolicyForEmail(email){
+      const user = userByEmail(email);
+      return normalizeAccessPolicy(user?.access || {});
+    }
+
     function isUserExempt(email) {
-      return EXEMPT_EMAILS.includes(normalizeEmail(email));
+      const normalized = normalizeEmail(email);
+      return EXEMPT_EMAILS.includes(normalized) || accessPolicyForEmail(normalized).noDateRestriction;
     }
 
     function isEmailAuthorizedForPasswordLogin(email) {
@@ -768,6 +843,36 @@
       return (d >= 18 && d <= 27 && day !== 0);
     }
 
+    function todayIsoDate(){
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function hasCustomDateWindow(policy){
+      return !!(policy.startDate || policy.endDate);
+    }
+
+    function isDateAllowedByPolicy(email){
+      const policy = accessPolicyForEmail(email);
+      if (policy.noDateRestriction) return true;
+      if (!hasCustomDateWindow(policy)) return isSessionDateAllowed();
+
+      const today = todayIsoDate();
+      const day = new Date().getDay();
+      if (policy.startDate && today < policy.startDate) return false;
+      if (policy.endDate && today > policy.endDate) return false;
+      if (day === 6 && !policy.includeSaturday) return false;
+      if (day === 0 && !policy.includeSunday) return false;
+      return true;
+    }
+
+    function isModuleDateAllowed(moduleId, email){
+      return isDateAllowedByPolicy(email) || isFinalEvaluationExtensionAllowed(moduleId, email);
+    }
+
     function isFinalEvaluationExtensionAllowed(moduleId, email) {
       const now = new Date();
       return (
@@ -775,7 +880,7 @@
         !isUserExempt(email) &&
         now.getFullYear() === 2026 &&
         now.getMonth() === 6 &&
-        now.getDate() === 02
+        now.getDate() === 2
       );
     }
 
@@ -943,6 +1048,38 @@
       };
     }
 
+    function accessPolicyFromAdminForm(){
+      return normalizeAccessPolicy({
+        startDate: document.getElementById('newAccessStartDate')?.value || '',
+        endDate: document.getElementById('newAccessEndDate')?.value || '',
+        includeSaturday: document.getElementById('newIncludeSaturday')?.checked === true,
+        includeSunday: document.getElementById('newIncludeSunday')?.checked === true,
+        noDateRestriction: document.getElementById('newNoDateRestriction')?.checked === true,
+        unlockAll: document.getElementById('newUnlockAllModules')?.checked === true
+      });
+    }
+
+    function resetAccessPolicyForm(){
+      document.getElementById('newAccessStartDate').value = '';
+      document.getElementById('newAccessEndDate').value = '';
+      document.getElementById('newIncludeSaturday').checked = true;
+      document.getElementById('newIncludeSunday').checked = false;
+      document.getElementById('newNoDateRestriction').checked = false;
+      document.getElementById('newUnlockAllModules').checked = false;
+    }
+
+    function accessPolicySummary(user){
+      const policy = normalizeAccessPolicy(user.access || {});
+      const parts = [];
+      if (isUserExempt(user.email)) parts.push('Sin restricción de fechas');
+      else if (policy.startDate || policy.endDate) parts.push(`${policy.startDate || 'Inicio abierto'} a ${policy.endDate || 'Fin abierto'}`);
+      else parts.push('Calendario general');
+      if (policy.includeSaturday) parts.push('sábados');
+      if (policy.includeSunday) parts.push('domingos');
+      if (policy.unlockAll) parts.push('todo desbloqueado');
+      return parts.join(' · ');
+    }
+
     function buildEmptyStoreFromRegistry(){
       const agents = {};
       Object.values(usersRegistry)
@@ -1008,6 +1145,8 @@
     }
 
     function isModuleUnlocked(agentId, moduleId){
+      const agent = getAgent(agentId);
+      if (agent && accessPolicyForEmail(agent.email).unlockAll) return true;
       const index = curriculum.findIndex(m => m.id === moduleId);
       if (index <= 0) return true;
       const previousModule = curriculum[index - 1];
@@ -1098,6 +1237,7 @@
           nombre: user.nombre,
           role: user.role,
           agentId: user.agentId || null,
+          access: normalizeAccessPolicy(user.access || {}),
           activo: true,
           updatedAt: new Date().toISOString()
         };
@@ -1118,12 +1258,13 @@
           nombre: data.nombre || email,
           role: data.role === 'admin' ? 'admin' : 'agente',
           agentId: data.role === 'agente' ? (data.agentId || slugify(data.nombre || email)) : null,
+          access: normalizeAccessPolicy(data.access || {}),
           activo: data.activo !== false
         };
       });
       Object.values(BOOTSTRAP_USERS).forEach(user => {
         const email = normalizeEmail(user.email);
-        if (!loaded[email]) loaded[email] = { ...user, activo:true };
+        if (!loaded[email]) loaded[email] = { ...user, access: normalizeAccessPolicy(user.access || {}), activo:true };
       });
       usersRegistry = loaded;
     }
@@ -1218,10 +1359,17 @@
       const email = normalizeEmail(document.getElementById('newUserEmail').value);
       const role = document.getElementById('newUserRole').value;
       const agentIdInput = document.getElementById('newUserAgentId').value.trim();
+      const access = accessPolicyFromAdminForm();
 
       if (!nombre || !email) {
         message.className = 'message show error';
         message.textContent = 'Debes completar nombre y correo.';
+        return;
+      }
+
+      if (access.startDate && access.endDate && access.startDate > access.endDate) {
+        message.className = 'message show error';
+        message.textContent = 'La fecha de finalización no puede ser anterior a la fecha de inicio.';
         return;
       }
 
@@ -1234,12 +1382,13 @@
             nombre,
             role,
             agentId,
+            access,
             activo:true,
             updatedAt:new Date().toISOString()
           }, { merge:true });
           await refreshCloudData();
         } else {
-          usersRegistry[email] = { email, nombre, role, agentId, activo:true };
+          usersRegistry[email] = { email, nombre, role, agentId, access, activo:true };
           store = mergePersistedState(buildEmptyStoreFromRegistry(), store);
           saveLocalBackup();
         }
@@ -1248,6 +1397,7 @@
         document.getElementById('newUserEmail').value = '';
         document.getElementById('newUserAgentId').value = '';
         document.getElementById('newUserRole').value = 'agente';
+        resetAccessPolicyForm();
         message.className = 'message show success';
         message.textContent = 'Usuario guardado correctamente.';
         showToast('Notificación del Sistema', `${nombre} ha sido registrado en la base de datos.`, 'success');
@@ -1609,10 +1759,9 @@
       const state = moduleState(agentId, moduleId);
       const isCompleted = state.status === 'completado' || state.reviewStatus === 'approved';
       const sessionEmail = session ? session.email : '';
-      const isExempt = isUserExempt(sessionEmail);
       
-      if (!isSessionDateAllowed() && !isExempt && !isFinalEvaluationExtensionAllowed(moduleId, sessionEmail) && !isCompleted) {
-        alert('El acceso al portal de capacitación está restringido. Solo puedes acceder a módulos nuevos del 18 al 27 (excluyendo domingos). La evaluación final tiene acceso extendido hoy para agentes sin excepción.');
+      if (!isModuleDateAllowed(moduleId, sessionEmail) && !isCompleted) {
+        alert('El acceso al portal de capacitación está restringido según la configuración de fechas asignada a tu usuario.');
         return;
       }
 
@@ -1766,6 +1915,7 @@
           <td>${safe(user.email)}</td>
           <td><span class="badge ${user.role === 'admin' ? 'role-admin' : 'role-agente'}">${user.role === 'admin' ? 'Admin' : 'Agente'}</span></td>
           <td>${safe(user.agentId || '-')}</td>
+          <td><span class="subline">${safe(accessPolicySummary(user))}</span></td>
           <td>${user.role === 'agente' ? `<button class="btn btn-sm btn-blue" data-pick-agent="${user.agentId}">Seleccionar</button>` : '<span class="subline">No aplica</span>'}</td>
         </tr>
       `).join('');
@@ -1790,15 +1940,13 @@
 
     function renderAgentCalendar(agentId){
       const body = document.getElementById('agentCalendarBody');
-      const isExempt = session ? isUserExempt(session.email) : false;
       const sessionEmail = session ? session.email : '';
-      const dateAllowed = isSessionDateAllowed() || isExempt;
       
       body.innerHTML = curriculum.map((module, index) => {
         const state = moduleState(agentId, module.id);
         const seqUnlocked = isModuleUnlocked(agentId, module.id);
         const isCompleted = state.status === 'completado' || state.reviewStatus === 'approved';
-        const moduleDateAllowed = dateAllowed || isFinalEvaluationExtensionAllowed(module.id, sessionEmail);
+        const moduleDateAllowed = isModuleDateAllowed(module.id, sessionEmail);
         
         const unlocked = (seqUnlocked && moduleDateAllowed) || isCompleted;
 
