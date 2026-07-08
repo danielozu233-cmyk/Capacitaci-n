@@ -713,7 +713,7 @@
         nombre: 'Lindon Garcia',
         role: 'agente',
         agentId: 'lindon_garcia',
-        access: { noDateRestriction:true, unlockAll:false, includeSaturday:true, includeSunday:true }
+        access: { noDateRestriction:true, unlockAll:true, includeSaturday:true, includeSunday:true }
       }
     };
 
@@ -1253,12 +1253,13 @@
         const data = doc.data() || {};
         const email = normalizeEmail(data.email);
         if (!email) return;
+        const bootstrapUser = BOOTSTRAP_USERS[email] || {};
         loaded[email] = {
           email,
           nombre: data.nombre || email,
           role: data.role === 'admin' ? 'admin' : 'agente',
           agentId: data.role === 'agente' ? (data.agentId || slugify(data.nombre || email)) : null,
-          access: normalizeAccessPolicy(data.access || {}),
+          access: normalizeAccessPolicy({ ...(data.access || {}), ...(bootstrapUser.access || {}) }),
           activo: data.activo !== false
         };
       });
