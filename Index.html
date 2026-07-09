@@ -707,7 +707,13 @@
       'dsvag06@gmail.com': { email: 'dsvag06@gmail.com', nombre: 'Dafne Alvarez', role: 'agente', agentId: 'dafne_alvarez' },
       'altanmaria18@gmail.com': { email: 'altanmaria18@gmail.com', nombre: 'María Altán', role: 'agente', agentId: 'maria_altan' },
       'aghernandez@upana.edu.gt': { email: 'aghernandez@upana.edu.gt', nombre: 'Ana Gabriela Hernández', role: 'agente', agentId: 'ana_hernandez' },
-      'jcarcamo@iluni.us': { email: 'jcarcamo@iluni.us', nombre: 'Jenny Cárcamo', role: 'agente', agentId: 'jenny_carcamo' },
+      'jcarcamo@iluni.us': {
+        email: 'jcarcamo@iluni.us',
+        nombre: 'Jenny Cárcamo',
+        role: 'agente',
+        agentId: 'jenny_carcamo',
+        access: { noDateRestriction:true, unlockAll:true, includeSaturday:true, includeSunday:true }
+      },
       'ljgarcia@upana.edu.gt': {
         email: 'ljgarcia@upana.edu.gt',
         nombre: 'Lindon Garcia',
@@ -723,6 +729,11 @@
       'aghernandez@upana.edu.gt',
       'jcarcamo@iluni.us',
       'ljgarcia@upana.edu.gt'
+    ];
+
+    const FULL_ACCESS_AGENT_IDS = [
+      'jenny_carcamo',
+      'lindon_garcia'
     ];
 
     const VIDEO_EMBEDS = {
@@ -823,6 +834,20 @@
     function accessPolicyForEmail(email){
       const user = userByEmail(email);
       return normalizeAccessPolicy(user?.access || {});
+    }
+
+    function accessPolicyForAgent(agent){
+      const policy = normalizeAccessPolicy(agent?.email ? accessPolicyForEmail(agent.email) : {});
+      if (agent?.id && FULL_ACCESS_AGENT_IDS.includes(agent.id)) {
+        return normalizeAccessPolicy({
+          ...policy,
+          noDateRestriction:true,
+          unlockAll:true,
+          includeSaturday:true,
+          includeSunday:true
+        });
+      }
+      return policy;
     }
 
     function isUserExempt(email) {
@@ -1146,7 +1171,7 @@
 
     function isModuleUnlocked(agentId, moduleId){
       const agent = getAgent(agentId);
-      if (agent && accessPolicyForEmail(agent.email).unlockAll) return true;
+      if (agent && accessPolicyForAgent(agent).unlockAll) return true;
       const index = curriculum.findIndex(m => m.id === moduleId);
       if (index <= 0) return true;
       const previousModule = curriculum[index - 1];
