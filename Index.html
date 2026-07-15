@@ -376,6 +376,8 @@
     .pending-review-metric{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card-soft)}
     .pending-review-metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
     .pending-review-metric strong{display:block;margin-top:5px;font-size:22px;letter-spacing:-.02em}
+    .pending-review-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--green) 22%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--green) 7%,var(--panel))}
+    .pending-review-toolbar .hint{margin:0}
     .pending-review-table-wrap{max-height:58vh;overflow:auto}
     .pending-review-table{min-width:900px}
     .pending-review-table th{position:sticky;top:0;z-index:2}
@@ -384,6 +386,8 @@
       .pending-review-section .section-head{align-items:stretch}
       .pending-review-btn{width:100%}
       .pending-review-summary-grid{grid-template-columns:1fr}
+      .pending-review-toolbar{align-items:stretch;flex-direction:column}
+      .pending-review-toolbar .btn{width:100%}
     }
     .mini-table{width:100%;min-width:760px;border-collapse:collapse}
     .mini-table th,.mini-table td{padding:12px 10px;border-bottom:1px solid var(--line-soft);font-size:13px;text-align:left;vertical-align:top}
@@ -2190,6 +2194,13 @@
           <div class="pending-review-metric"><span>Puntaje asignado</span><strong>${assignedPoints} / ${possiblePoints}</strong></div>
           <div class="pending-review-metric"><span>Agentes involucrados</span><strong>${agentCount}</strong></div>
         </div>
+        <div class="pending-review-toolbar">
+          <p class="hint">La acci&oacute;n asignar&aacute; el puntaje m&aacute;ximo de cada actividad y marcar&aacute; todas como aprobadas.</p>
+          <button class="btn btn-success" id="approveAllPendingBtn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Aprobar todo y asignar puntaje completo
+          </button>
+        </div>
         <div class="table-wrap pending-review-table-wrap">
           <table class="pending-review-table">
             <thead>
@@ -2226,6 +2237,34 @@
           </table>
         </div>
       `;
+    }
+
+    async function approveAllPendingReviews(){
+      const items = getPendingReviewItems();
+      if (!items.length) {
+        closeModal();
+        render();
+        return;
+      }
+
+      const reviewedAt = new Date().toISOString();
+      const agentIds = new Set();
+      items.forEach(item => {
+        const state = moduleState(item.agent.id, item.module.id);
+        state.reviewStatus = 'approved';
+        state.status = 'completado';
+        state.submitted = false;
+        state.score = item.maxPoints;
+        state.reviewedAt = reviewedAt;
+        state.updatedAt = reviewedAt;
+        state.feedback = state.feedback || 'Aprobado mediante revisi\u00f3n masiva con puntaje completo.';
+        agentIds.add(item.agent.id);
+      });
+
+      await Promise.all([...agentIds].map(agentId => saveAgentProgress(agentId)));
+      closeModal();
+      showToast('Revisi\u00f3n masiva completada', `${items.length} actividad${items.length === 1 ? '' : 'es'} aprobada${items.length === 1 ? '' : 's'} con puntaje completo.`, 'success');
+      render();
     }
 
     function openPendingReviewsModal(){
@@ -2553,6 +2592,7 @@
       if (e.target.id === 'addUserBtn') { await saveUserFromAdmin(); return; }
       if (e.target.id === 'openAccessModalBtn') { openAccessModal(); return; }
       if (e.target.id === 'openPendingReviewsBtn') { openPendingReviewsModal(); return; }
+      if (e.target.id === 'approveAllPendingBtn') { await approveAllPendingReviews(); return; }
 
       const pendingReviewBtn = e.target.closest('[data-open-pending-agent]');
       if (pendingReviewBtn) {
