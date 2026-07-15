@@ -362,7 +362,12 @@
     .review-actions .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .review-actions .right{display:flex;gap:10px;flex-wrap:wrap}
 
-    .admin-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:14px}
+    .admin-grid{display:grid;grid-template-columns:1fr;gap:18px}
+    .access-form-panel,.registered-users-panel{margin-top:0;padding:22px}
+    .access-form-panel{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 4%,var(--panel)),var(--panel-2));border-color:color-mix(in srgb,var(--accent) 18%,var(--line))}
+    .access-form-panel .grid-3{align-items:start}
+    .registered-users-panel{background:linear-gradient(180deg,var(--panel),var(--card-soft))}
+    .registered-users-panel .table-wrap{max-height:480px}
     .mini-table{width:100%;min-width:760px;border-collapse:collapse}
     .mini-table th,.mini-table td{padding:12px 10px;border-bottom:1px solid var(--line-soft);font-size:13px;text-align:left;vertical-align:top}
     .mini-table th{font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -625,7 +630,7 @@
       </div>
       <div class="modal-body">
         <div class="admin-grid">
-          <div class="subcard" style="margin-top:0">
+          <div class="subcard access-form-panel" style="margin-top:0">
             <h5>Agregar o actualizar usuario</h5>
             <p class="field-help" style="margin:0 0 14px">Los usuarios creados aqu&iacute; ingresar&aacute;n con Firebase usando su correo y contrase&ntilde;a. La contrase&ntilde;a no se guarda en el registro de capacitaci&oacute;n.</p>
             <div class="grid-2">
@@ -638,7 +643,7 @@
                 <input id="newUserEmail" type="email" placeholder="correo@dominio.com" />
               </div>
             </div>
-            <div class="grid-2" style="margin-top:14px">
+            <div class="grid-3" style="margin-top:14px">
               <div class="field">
                 <label for="newUserPassword">Contrase&ntilde;a de acceso</label>
                 <div class="password-input-wrap">
@@ -695,7 +700,7 @@
             <div id="adminUserMessage" class="message"></div>
           </div>
 
-          <div class="subcard" style="margin-top:0">
+          <div class="subcard registered-users-panel" style="margin-top:0">
             <h5>Usuarios registrados</h5>
             <div class="table-wrap">
               <table class="mini-table">
