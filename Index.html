@@ -368,6 +368,23 @@
     .access-form-panel .grid-3{align-items:start}
     .registered-users-panel{background:linear-gradient(180deg,var(--panel),var(--card-soft))}
     .registered-users-panel .table-wrap{max-height:480px}
+    .pending-review-section{margin-bottom:18px;padding:18px 20px}
+    .pending-review-section .section-head{margin:0}
+    .pending-review-btn{white-space:nowrap;min-height:46px}
+    .pending-review-count{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:rgba(255,255,255,.28);font-size:12px;font-weight:950}
+    .pending-review-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .pending-review-metric{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card-soft)}
+    .pending-review-metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+    .pending-review-metric strong{display:block;margin-top:5px;font-size:22px;letter-spacing:-.02em}
+    .pending-review-table-wrap{max-height:58vh;overflow:auto}
+    .pending-review-table{min-width:900px}
+    .pending-review-table th{position:sticky;top:0;z-index:2}
+    .pending-review-score{font-weight:900;color:var(--text);white-space:nowrap}
+    @media (max-width:720px){
+      .pending-review-section .section-head{align-items:stretch}
+      .pending-review-btn{width:100%}
+      .pending-review-summary-grid{grid-template-columns:1fr}
+    }
     .mini-table{width:100%;min-width:760px;border-collapse:collapse}
     .mini-table th,.mini-table td{padding:12px 10px;border-bottom:1px solid var(--line-soft);font-size:13px;text-align:left;vertical-align:top}
     .mini-table th{font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -561,6 +578,20 @@
     </section>
 
     <section id="adminView" class="hidden">
+      <section class="section pending-review-section">
+        <div class="section-head">
+          <div>
+            <h3>Bandeja de revisi&oacute;n</h3>
+            <p id="pendingReviewSummary">Consulta en un solo lugar las actividades enviadas por los agentes.</p>
+          </div>
+          <button class="btn btn-primary pending-review-btn" id="openPendingReviewsBtn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Revisi&oacute;n masiva
+            <span class="pending-review-count" id="pendingReviewCount">0</span>
+          </button>
+        </div>
+      </section>
+
       <section class="stats" id="adminStats">
         <article class="stat">
           <div class="label">Agentes registrados</div>
@@ -578,9 +609,9 @@
           <small>Actividades ya aprobadas y puntuadas.</small>
         </article>
         <article class="stat">
-          <div class="label">Promedio general</div>
-          <div class="value" id="adminAverageScore">0/100</div>
-          <small>Puntaje promedio total considerando los agentes registrados.</small>
+          <div class="label">Agentes finalizados</div>
+          <div class="value" id="adminCompletedAgents">0</div>
+          <small>Agentes con todas las actividades aprobadas.</small>
         </article>
       </section>
 
@@ -1973,6 +2004,7 @@
       if (!modalContext) return;
       if (modalContext.type === 'agent') openAgentModuleModal(modalContext.agentId, modalContext.moduleId);
       if (modalContext.type === 'admin') openAdminReviewModal(modalContext.agentId, modalContext.moduleId);
+      if (modalContext.type === 'pending-list') openPendingReviewsModal();
     }
 
     function openAgentModuleModal(agentId, moduleId){
@@ -2111,21 +2143,93 @@
       const agents = Object.values(store.agents);
       let pendingReview = 0;
       let approved = 0;
-      const totalScores = [];
+      let completedAgents = 0;
 
       agents.forEach(agent => {
-        let total = 0;
+        let allModulesApproved = true;
         curriculum.forEach(m => {
           const state = agent.modules[m.id];
-          if (state.reviewStatus === 'submitted') pendingReview++;
+          if (state.reviewStatus === 'submitted' || state.submitted === true) pendingReview++;
           if (state.reviewStatus === 'approved') approved++;
-          total += Number(state.score) || 0;
+          if (state.reviewStatus !== 'approved') allModulesApproved = false;
         });
-        totalScores.push(total);
+        if (allModulesApproved) completedAgents++;
       });
 
-      const average = totalScores.length ? Math.round(totalScores.reduce((a,b)=>a+b,0) / totalScores.length) : 0;
-      return { agents: agents.length, pendingReview, approved, average };
+      return { agents: agents.length, pendingReview, approved, completedAgents };
+    }
+
+    function getPendingReviewItems(){
+      const items = [];
+      Object.values(store.agents).forEach(agent => {
+        curriculum.forEach(module => {
+          const state = moduleState(agent.id, module.id);
+          const isPending = state.reviewStatus === 'submitted' || state.submitted === true;
+          if (!isPending) return;
+          items.push({ agent, module, state, maxPoints: moduleMaxPoints(module.id) });
+        });
+      });
+      return items.sort((a,b) => {
+        const first = String(a.state.submittedAt || '');
+        const second = String(b.state.submittedAt || '');
+        return first.localeCompare(second);
+      });
+    }
+
+    function buildPendingReviewsHtml(){
+      const items = getPendingReviewItems();
+      if (!items.length) return '<div class="empty-state">No hay actividades pendientes de revisi&oacute;n.</div>';
+
+      const assignedPoints = items.reduce((sum,item) => sum + (Number(item.state.score) || 0), 0);
+      const possiblePoints = items.reduce((sum,item) => sum + item.maxPoints, 0);
+      const agentCount = new Set(items.map(item => item.agent.id)).size;
+
+      return `
+        <div class="pending-review-summary-grid">
+          <div class="pending-review-metric"><span>Actividades pendientes</span><strong>${items.length}</strong></div>
+          <div class="pending-review-metric"><span>Puntaje asignado</span><strong>${assignedPoints} / ${possiblePoints}</strong></div>
+          <div class="pending-review-metric"><span>Agentes involucrados</span><strong>${agentCount}</strong></div>
+        </div>
+        <div class="table-wrap pending-review-table-wrap">
+          <table class="pending-review-table">
+            <thead>
+              <tr>
+                <th>Agente</th>
+                <th>Actividad</th>
+                <th>Enviado</th>
+                <th>Puntaje asignado</th>
+                <th>Acci&oacute;n</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>
+                    <strong>${safe(item.agent.nombre)}</strong>
+                    <span class="subline">${safe(item.agent.email)}</span>
+                  </td>
+                  <td>
+                    <span class="activity-link">${safe(item.module.actividad)}</span>
+                    <span class="subline">${safe(item.module.descripcion)}</span>
+                  </td>
+                  <td>${safe(formatDateTime(item.state.submittedAt))}</td>
+                  <td class="pending-review-score">${Number(item.state.score) || 0} / ${item.maxPoints}</td>
+                  <td>
+                    <button class="btn btn-sm btn-blue" type="button" data-open-pending-agent="${safe(item.agent.id)}" data-open-pending-module="${safe(item.module.id)}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+                      Abrir revisi&oacute;n
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function openPendingReviewsModal(){
+      openModal('Bandeja de revisi\u00f3n masiva', buildPendingReviewsHtml(), { type:'pending-list' });
     }
 
     function renderRegisteredUsers(){
@@ -2268,10 +2372,15 @@
 
     function renderAdminView(){
       const metrics = getAdminMetrics();
+      const pendingItems = getPendingReviewItems();
       document.getElementById('adminAgentsCount').textContent = metrics.agents;
       document.getElementById('adminPendingReview').textContent = metrics.pendingReview;
       document.getElementById('adminApprovedTotal').textContent = metrics.approved;
-      document.getElementById('adminAverageScore').textContent = `${metrics.average}/100`;
+      document.getElementById('adminCompletedAgents').textContent = metrics.completedAgents;
+      document.getElementById('pendingReviewCount').textContent = pendingItems.length;
+      document.getElementById('pendingReviewSummary').textContent = pendingItems.length
+        ? `${pendingItems.length} actividad${pendingItems.length === 1 ? '' : 'es'} esperando revisi\u00f3n y asignaci\u00f3n de puntaje.`
+        : 'No hay actividades pendientes de revisi\u00f3n.';
       renderAgentSelector();
       renderAdminProgress();
     }
@@ -2443,6 +2552,13 @@
       if (e.target.id === 'themeToggleLogin' || e.target.id === 'themeToggleApp') { toggleTheme(); return; }
       if (e.target.id === 'addUserBtn') { await saveUserFromAdmin(); return; }
       if (e.target.id === 'openAccessModalBtn') { openAccessModal(); return; }
+      if (e.target.id === 'openPendingReviewsBtn') { openPendingReviewsModal(); return; }
+
+      const pendingReviewBtn = e.target.closest('[data-open-pending-agent]');
+      if (pendingReviewBtn) {
+        openAdminReviewModal(pendingReviewBtn.dataset.openPendingAgent, pendingReviewBtn.dataset.openPendingModule);
+        return;
+      }
 
       if (e.target.id === 'loadSelectedAgentBtn') {
         const select = document.getElementById('adminAgentSelect');
